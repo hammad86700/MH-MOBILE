@@ -1,0 +1,6 @@
+{
+  "name": "HM Mobile",
+  "description": "Official digital storefront, mobile repairing service center, accessories catalog, and multilingual Gemini AI customer support platform for HM Mobile in Main Auto Market, Rahim Yar Khan, Pakistan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

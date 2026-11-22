@@ -1,0 +1,229 @@
+{
+  "entities": {
+    "ShopSettings": {
+      "title": "ShopSettings",
+      "description": "Editable storefront profile, contact placeholders, business hours, About Us copy, and chatbot behavior settings for HM Mobile.",
+      "type": "object",
+      "properties": {
+        "businessName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "tagline": { "type": "string", "maxLength": 240 },
+        "locationAddress": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "phoneNumber": { "type": "string", "maxLength": 60 },
+        "whatsappNumber": { "type": "string", "maxLength": 60 },
+        "email": { "type": "string", "maxLength": 120 },
+        "openingHours": { "type": "string", "maxLength": 200 },
+        "aboutIntro": { "type": "string", "maxLength": 2000 },
+        "aboutServicesSummary": { "type": "string", "maxLength": 1500 },
+        "missionStatement": { "type": "string", "maxLength": 1500 },
+        "customerSatisfactionNote": { "type": "string", "maxLength": 1500 },
+        "whyChooseUsNote": { "type": "string", "maxLength": 1500 },
+        "facebookUrl": { "type": "string", "maxLength": 300 },
+        "instagramUrl": { "type": "string", "maxLength": 300 },
+        "tiktokUrl": { "type": "string", "maxLength": 300 },
+        "chatWelcomeMessage": { "type": "string", "maxLength": 800 },
+        "chatbotCustomInstructions": { "type": "string", "maxLength": 3000 },
+        "chatDisclosureText": { "type": "string", "maxLength": 300 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["businessName", "locationAddress", "updatedAt"]
+    },
+    "RepairService": {
+      "title": "RepairService",
+      "description": "A mobile hardware, software, or diagnostic service offered by HM Mobile.",
+      "type": "object",
+      "properties": {
+        "slug": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[a-z0-9-]+$" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "category": { "type": "string", "enum": ["hardware", "software", "diagnostics"] },
+        "description": { "type": "string", "minLength": 10, "maxLength": 800 },
+        "iconKey": { "type": "string", "maxLength": 40 },
+        "priceLabel": { "type": "string", "maxLength": 100 },
+        "isConfirmedAvailable": { "type": "boolean" },
+        "isFeatured": { "type": "boolean" },
+        "sortOrder": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["slug", "name", "category", "description", "isConfirmedAvailable", "isFeatured", "sortOrder", "updatedAt"]
+    },
+    "Accessory": {
+      "title": "Accessory",
+      "description": "A mobile accessory item or category listing in the HM Mobile catalog.",
+      "type": "object",
+      "properties": {
+        "slug": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[a-z0-9-]+$" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Mobile Chargers",
+            "USB Cables",
+            "Handsfree & Earphones",
+            "Bluetooth Earbuds",
+            "Power Banks",
+            "Mobile Covers",
+            "Screen Protectors",
+            "Tempered Glass",
+            "Mobile Holders",
+            "Speakers",
+            "Smart Watches",
+            "Other Mobile Accessories"
+          ]
+        },
+        "description": { "type": "string", "minLength": 10, "maxLength": 800 },
+        "priceLabel": { "type": "string", "maxLength": 100 },
+        "availabilityStatus": {
+          "type": "string",
+          "enum": ["confirm_availability", "in_stock", "limited_stock", "out_of_stock"]
+        },
+        "imageUrl": { "type": "string", "maxLength": 400 },
+        "isFeatured": { "type": "boolean" },
+        "sortOrder": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["slug", "name", "category", "description", "priceLabel", "availabilityStatus", "isFeatured", "sortOrder", "updatedAt"]
+    },
+    "RepairRequest": {
+      "title": "RepairRequest",
+      "description": "Customer-submitted mobile repair booking request stored for shop owner review.",
+      "type": "object",
+      "properties": {
+        "ticketCode": { "type": "string", "minLength": 4, "maxLength": 40 },
+        "customerName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "contactInfo": { "type": "string", "minLength": 4, "maxLength": 120 },
+        "whatsappNumber": { "type": "string", "maxLength": 40 },
+        "phoneModel": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "serviceName": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "problemDescription": { "type": "string", "minLength": 5, "maxLength": 1500 },
+        "source": { "type": "string", "enum": ["website_form", "ai_chatbot"] },
+        "status": { "type": "string", "enum": ["pending", "reviewing", "confirmed", "in_progress", "completed", "cancelled"] },
+        "adminNotes": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ticketCode", "customerName", "contactInfo", "phoneModel", "serviceName", "problemDescription", "source", "status", "createdAt", "updatedAt"]
+    },
+    "CustomerInquiry": {
+      "title": "CustomerInquiry",
+      "description": "General contact message or accessory/service inquiry submitted by a customer.",
+      "type": "object",
+      "properties": {
+        "inquiryType": { "type": "string", "enum": ["general", "accessory", "service"] },
+        "customerName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "contactInfo": { "type": "string", "minLength": 4, "maxLength": 120 },
+        "relatedItemName": { "type": "string", "maxLength": 160 },
+        "message": { "type": "string", "minLength": 5, "maxLength": 1500 },
+        "status": { "type": "string", "enum": ["new", "replied", "archived"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["inquiryType", "customerName", "contactInfo", "message", "status", "createdAt", "updatedAt"]
+    },
+    "FaqItem": {
+      "title": "FaqItem",
+      "description": "Frequently asked question and verified non-promissory answer.",
+      "type": "object",
+      "properties": {
+        "category": { "type": "string", "minLength": 2, "maxLength": 60 },
+        "question": { "type": "string", "minLength": 5, "maxLength": 240 },
+        "answer": { "type": "string", "minLength": 10, "maxLength": 1200 },
+        "sortOrder": { "type": "number" },
+        "isPublished": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["category", "question", "answer", "sortOrder", "isPublished", "updatedAt"]
+    },
+    "Testimonial": {
+      "title": "Testimonial",
+      "description": "Customer testimonial or clearly labeled editable placeholder review.",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "deviceOrService": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "quote": { "type": "string", "minLength": 10, "maxLength": 600 },
+        "isPlaceholder": { "type": "boolean" },
+        "isPublished": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["customerName", "deviceOrService", "quote", "isPlaceholder", "isPublished", "updatedAt"]
+    },
+    "KnowledgeEntry": {
+      "title": "KnowledgeEntry",
+      "description": "Verified shop knowledge base article injected into the Gemini AI customer support assistant.",
+      "type": "object",
+      "properties": {
+        "topic": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "category": { "type": "string", "enum": ["policy", "warranty", "repair_process", "shop_info", "pricing_note"] },
+        "content": { "type": "string", "minLength": 10, "maxLength": 2000 },
+        "isActive": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["topic", "category", "content", "isActive", "updatedAt"]
+    },
+    "ChatLog": {
+      "title": "ChatLog",
+      "description": "Recorded customer support chat exchange (disclosed in chat UI) for shop owner review.",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string", "minLength": 6, "maxLength": 80 },
+        "userMessage": { "type": "string", "minLength": 1, "maxLength": 1500 },
+        "assistantReply": { "type": "string", "minLength": 1, "maxLength": 3000 },
+        "languageHint": { "type": "string", "maxLength": 40 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sessionId", "userMessage", "assistantReply", "createdAt"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized admin role document keyed by Firebase Auth UID.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 120 },
+        "role": { "type": "string", "enum": ["admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/shop_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/ShopSettings" },
+      "description": "Editable HM Mobile storefront profile, contact info, hours, and chatbot settings."
+    },
+    "/repair_services/{serviceId}": {
+      "schema": { "$ref": "#/entities/RepairService" },
+      "description": "Catalog of mobile hardware, software, and diagnostic repair services."
+    },
+    "/accessories/{accessoryId}": {
+      "schema": { "$ref": "#/entities/Accessory" },
+      "description": "Mobile accessories catalog with editable prices and availability."
+    },
+    "/repair_requests/{requestId}": {
+      "schema": { "$ref": "#/entities/RepairRequest" },
+      "description": "Private customer repair appointment requests readable only by admins."
+    },
+    "/customer_inquiries/{inquiryId}": {
+      "schema": { "$ref": "#/entities/CustomerInquiry" },
+      "description": "Private customer contact and product inquiries readable only by admins."
+    },
+    "/faqs/{faqId}": {
+      "schema": { "$ref": "#/entities/FaqItem" },
+      "description": "Published frequently asked questions."
+    },
+    "/testimonials/{testimonialId}": {
+      "schema": { "$ref": "#/entities/Testimonial" },
+      "description": "Customer reviews and clearly labeled editable placeholders."
+    },
+    "/knowledge_entries/{entryId}": {
+      "schema": { "$ref": "#/entities/KnowledgeEntry" },
+      "description": "Structured business knowledge articles used to ground the Gemini AI support assistant."
+    },
+    "/chat_logs/{logId}": {
+      "schema": { "$ref": "#/entities/ChatLog" },
+      "description": "Disclosed customer support conversation records readable only by admins."
+    },
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Admin role documents keyed by Firebase Auth UID."
+    }
+  }
+}

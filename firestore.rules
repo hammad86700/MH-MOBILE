@@ -1,0 +1,334 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core helper primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedEmail() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedEmail() && (
+        request.auth.token.email == 'mh9345174@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isOptionalString(data, key, maxLen) {
+      return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    // Validation Blueprints
+    function isValidShopSettings(data) {
+      return data.keys().hasAll(['businessName', 'locationAddress', 'updatedAt'])
+        && data.keys().hasOnly([
+          'businessName', 'tagline', 'locationAddress', 'phoneNumber', 'whatsappNumber',
+          'email', 'openingHours', 'aboutIntro', 'aboutServicesSummary', 'missionStatement',
+          'customerSatisfactionNote', 'whyChooseUsNote', 'facebookUrl', 'instagramUrl',
+          'tiktokUrl', 'chatWelcomeMessage', 'chatbotCustomInstructions', 'chatDisclosureText',
+          'updatedAt'
+        ])
+        && data.businessName is string && data.businessName.size() >= 1 && data.businessName.size() <= 100
+        && data.locationAddress is string && data.locationAddress.size() >= 1 && data.locationAddress.size() <= 240
+        && isOptionalString(data, 'tagline', 240)
+        && isOptionalString(data, 'phoneNumber', 60)
+        && isOptionalString(data, 'whatsappNumber', 60)
+        && isOptionalString(data, 'email', 120)
+        && isOptionalString(data, 'openingHours', 200)
+        && isOptionalString(data, 'aboutIntro', 2000)
+        && isOptionalString(data, 'aboutServicesSummary', 1500)
+        && isOptionalString(data, 'missionStatement', 1500)
+        && isOptionalString(data, 'customerSatisfactionNote', 1500)
+        && isOptionalString(data, 'whyChooseUsNote', 1500)
+        && isOptionalString(data, 'facebookUrl', 300)
+        && isOptionalString(data, 'instagramUrl', 300)
+        && isOptionalString(data, 'tiktokUrl', 300)
+        && isOptionalString(data, 'chatWelcomeMessage', 800)
+        && isOptionalString(data, 'chatbotCustomInstructions', 3000)
+        && isOptionalString(data, 'chatDisclosureText', 300)
+        && data.updatedAt == request.time;
+    }
+
+    function isValidRepairService(data) {
+      return data.keys().hasAll([
+          'slug', 'name', 'category', 'description', 'isConfirmedAvailable',
+          'isFeatured', 'sortOrder', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'slug', 'name', 'category', 'description', 'iconKey', 'priceLabel',
+          'isConfirmedAvailable', 'isFeatured', 'sortOrder', 'updatedAt'
+        ])
+        && data.slug is string && data.slug.size() >= 1 && data.slug.size() <= 100 && data.slug.matches('^[a-z0-9-]+$')
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
+        && data.category is string && data.category in ['hardware', 'software', 'diagnostics']
+        && data.description is string && data.description.size() >= 10 && data.description.size() <= 800
+        && isOptionalString(data, 'iconKey', 40)
+        && isOptionalString(data, 'priceLabel', 100)
+        && data.isConfirmedAvailable is bool
+        && data.isFeatured is bool
+        && data.sortOrder is number && data.sortOrder >= 0 && data.sortOrder <= 1000
+        && data.updatedAt == request.time;
+    }
+
+    function isValidAccessory(data) {
+      return data.keys().hasAll([
+          'slug', 'name', 'category', 'description', 'priceLabel',
+          'availabilityStatus', 'isFeatured', 'sortOrder', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'slug', 'name', 'category', 'description', 'priceLabel',
+          'availabilityStatus', 'imageUrl', 'isFeatured', 'sortOrder', 'updatedAt'
+        ])
+        && data.slug is string && data.slug.size() >= 1 && data.slug.size() <= 100 && data.slug.matches('^[a-z0-9-]+$')
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 140
+        && data.category is string && data.category in [
+          'Mobile Chargers', 'USB Cables', 'Handsfree & Earphones', 'Bluetooth Earbuds',
+          'Power Banks', 'Mobile Covers', 'Screen Protectors', 'Tempered Glass',
+          'Mobile Holders', 'Speakers', 'Smart Watches', 'Other Mobile Accessories'
+        ]
+        && data.description is string && data.description.size() >= 10 && data.description.size() <= 800
+        && data.priceLabel is string && data.priceLabel.size() >= 1 && data.priceLabel.size() <= 100
+        && data.availabilityStatus is string && data.availabilityStatus in [
+          'confirm_availability', 'in_stock', 'limited_stock', 'out_of_stock'
+        ]
+        && isOptionalString(data, 'imageUrl', 400)
+        && data.isFeatured is bool
+        && data.sortOrder is number && data.sortOrder >= 0 && data.sortOrder <= 1000
+        && data.updatedAt == request.time;
+    }
+
+    function isValidRepairRequest(data) {
+      return data.keys().hasAll([
+          'ticketCode', 'customerName', 'contactInfo', 'phoneModel',
+          'serviceName', 'problemDescription', 'source', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ticketCode', 'customerName', 'contactInfo', 'whatsappNumber', 'phoneModel',
+          'serviceName', 'problemDescription', 'source', 'status', 'adminNotes',
+          'createdAt', 'updatedAt'
+        ])
+        && data.ticketCode is string && data.ticketCode.size() >= 4 && data.ticketCode.size() <= 40
+        && data.customerName is string && data.customerName.size() >= 2 && data.customerName.size() <= 100
+        && data.contactInfo is string && data.contactInfo.size() >= 4 && data.contactInfo.size() <= 120
+        && isOptionalString(data, 'whatsappNumber', 40)
+        && data.phoneModel is string && data.phoneModel.size() >= 2 && data.phoneModel.size() <= 120
+        && data.serviceName is string && data.serviceName.size() >= 2 && data.serviceName.size() <= 140
+        && data.problemDescription is string && data.problemDescription.size() >= 5 && data.problemDescription.size() <= 1500
+        && data.source is string && data.source in ['website_form', 'ai_chatbot']
+        && data.status is string && data.status in ['pending', 'reviewing', 'confirmed', 'in_progress', 'completed', 'cancelled']
+        && isOptionalString(data, 'adminNotes', 1000)
+        && data.updatedAt == request.time;
+    }
+
+    function isValidInquiry(data) {
+      return data.keys().hasAll([
+          'inquiryType', 'customerName', 'contactInfo', 'message', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'inquiryType', 'customerName', 'contactInfo', 'relatedItemName',
+          'message', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.inquiryType is string && data.inquiryType in ['general', 'accessory', 'service']
+        && data.customerName is string && data.customerName.size() >= 2 && data.customerName.size() <= 100
+        && data.contactInfo is string && data.contactInfo.size() >= 4 && data.contactInfo.size() <= 120
+        && isOptionalString(data, 'relatedItemName', 160)
+        && data.message is string && data.message.size() >= 5 && data.message.size() <= 1500
+        && data.status is string && data.status in ['new', 'replied', 'archived']
+        && data.updatedAt == request.time;
+    }
+
+    function isValidFaq(data) {
+      return data.keys().hasAll(['category', 'question', 'answer', 'sortOrder', 'isPublished', 'updatedAt'])
+        && data.keys().hasOnly(['category', 'question', 'answer', 'sortOrder', 'isPublished', 'updatedAt'])
+        && data.category is string && data.category.size() >= 2 && data.category.size() <= 60
+        && data.question is string && data.question.size() >= 5 && data.question.size() <= 240
+        && data.answer is string && data.answer.size() >= 10 && data.answer.size() <= 1200
+        && data.sortOrder is number && data.sortOrder >= 0 && data.sortOrder <= 1000
+        && data.isPublished is bool
+        && data.updatedAt == request.time;
+    }
+
+    function isValidTestimonial(data) {
+      return data.keys().hasAll(['customerName', 'deviceOrService', 'quote', 'isPlaceholder', 'isPublished', 'updatedAt'])
+        && data.keys().hasOnly(['customerName', 'deviceOrService', 'quote', 'isPlaceholder', 'isPublished', 'updatedAt'])
+        && data.customerName is string && data.customerName.size() >= 2 && data.customerName.size() <= 100
+        && data.deviceOrService is string && data.deviceOrService.size() >= 2 && data.deviceOrService.size() <= 120
+        && data.quote is string && data.quote.size() >= 10 && data.quote.size() <= 600
+        && data.isPlaceholder is bool
+        && data.isPublished is bool
+        && data.updatedAt == request.time;
+    }
+
+    function isValidKnowledgeEntry(data) {
+      return data.keys().hasAll(['topic', 'category', 'content', 'isActive', 'updatedAt'])
+        && data.keys().hasOnly(['topic', 'category', 'content', 'isActive', 'updatedAt'])
+        && data.topic is string && data.topic.size() >= 2 && data.topic.size() <= 140
+        && data.category is string && data.category in ['policy', 'warranty', 'repair_process', 'shop_info', 'pricing_note']
+        && data.content is string && data.content.size() >= 10 && data.content.size() <= 2000
+        && data.isActive is bool
+        && data.updatedAt == request.time;
+    }
+
+    function isValidChatLog(data) {
+      return data.keys().hasAll(['sessionId', 'userMessage', 'assistantReply', 'createdAt'])
+        && data.keys().hasOnly(['sessionId', 'userMessage', 'assistantReply', 'languageHint', 'createdAt'])
+        && data.sessionId is string && data.sessionId.size() >= 6 && data.sessionId.size() <= 80
+        && data.userMessage is string && data.userMessage.size() >= 1 && data.userMessage.size() <= 1500
+        && data.assistantReply is string && data.assistantReply.size() >= 1 && data.assistantReply.size() <= 3000
+        && isOptionalString(data, 'languageHint', 40)
+        && data.createdAt == request.time;
+    }
+
+    function isValidAdminUser(data) {
+      return data.keys().hasAll(['email', 'role', 'createdAt'])
+        && data.keys().hasOnly(['email', 'role', 'createdAt'])
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 120
+        && data.role == 'admin'
+        && data.createdAt == request.time;
+    }
+
+    // 1. Public Storefront Collections
+    match /shop_settings/{settingId} {
+      allow get: if isValidId(settingId);
+      allow list: if true;
+      allow create: if isValidId(settingId) && isValidShopSettings(incoming()) && isAdmin();
+      allow update: if isValidId(settingId) && isValidShopSettings(incoming()) && isAdmin()
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'businessName', 'tagline', 'locationAddress', 'phoneNumber', 'whatsappNumber',
+          'email', 'openingHours', 'aboutIntro', 'aboutServicesSummary', 'missionStatement',
+          'customerSatisfactionNote', 'whyChooseUsNote', 'facebookUrl', 'instagramUrl',
+          'tiktokUrl', 'chatWelcomeMessage', 'chatbotCustomInstructions', 'chatDisclosureText',
+          'updatedAt'
+        ]);
+      allow delete: if isValidId(settingId) && isAdmin();
+    }
+
+    match /repair_services/{serviceId} {
+      allow get: if isValidId(serviceId);
+      allow list: if true;
+      allow create: if isValidId(serviceId) && isValidRepairService(incoming()) && isAdmin();
+      allow update: if isValidId(serviceId) && isValidRepairService(incoming()) && isAdmin()
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'slug', 'name', 'category', 'description', 'iconKey', 'priceLabel',
+          'isConfirmedAvailable', 'isFeatured', 'sortOrder', 'updatedAt'
+        ]);
+      allow delete: if isValidId(serviceId) && isAdmin();
+    }
+
+    match /accessories/{accessoryId} {
+      allow get: if isValidId(accessoryId);
+      allow list: if true;
+      allow create: if isValidId(accessoryId) && isValidAccessory(incoming()) && isAdmin();
+      allow update: if isValidId(accessoryId) && isValidAccessory(incoming()) && isAdmin()
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'slug', 'name', 'category', 'description', 'priceLabel',
+          'availabilityStatus', 'imageUrl', 'isFeatured', 'sortOrder', 'updatedAt'
+        ]);
+      allow delete: if isValidId(accessoryId) && isAdmin();
+    }
+
+    match /faqs/{faqId} {
+      allow get: if isValidId(faqId);
+      allow list: if true;
+      allow create: if isValidId(faqId) && isValidFaq(incoming()) && isAdmin();
+      allow update: if isValidId(faqId) && isValidFaq(incoming()) && isAdmin()
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'category', 'question', 'answer', 'sortOrder', 'isPublished', 'updatedAt'
+        ]);
+      allow delete: if isValidId(faqId) && isAdmin();
+    }
+
+    match /testimonials/{testimonialId} {
+      allow get: if isValidId(testimonialId);
+      allow list: if true;
+      allow create: if isValidId(testimonialId) && isValidTestimonial(incoming()) && isAdmin();
+      allow update: if isValidId(testimonialId) && isValidTestimonial(incoming()) && isAdmin()
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'customerName', 'deviceOrService', 'quote', 'isPlaceholder', 'isPublished', 'updatedAt'
+        ]);
+      allow delete: if isValidId(testimonialId) && isAdmin();
+    }
+
+    match /knowledge_entries/{entryId} {
+      allow get: if isValidId(entryId);
+      allow list: if true;
+      allow create: if isValidId(entryId) && isValidKnowledgeEntry(incoming()) && isAdmin();
+      allow update: if isValidId(entryId) && isValidKnowledgeEntry(incoming()) && isAdmin()
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'topic', 'category', 'content', 'isActive', 'updatedAt'
+        ]);
+      allow delete: if isValidId(entryId) && isAdmin();
+    }
+
+    // 2. Private Customer Lead & Conversation Collections
+    match /repair_requests/{requestId} {
+      allow get: if isValidId(requestId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(requestId)
+        && isValidRepairRequest(incoming())
+        && incoming().status == 'pending'
+        && incoming().createdAt == request.time
+        && (!('adminNotes' in incoming()) || incoming().adminNotes == '');
+      allow update: if isValidId(requestId)
+        && isValidRepairRequest(incoming())
+        && isAdmin()
+        && incoming().createdAt == existing().createdAt
+        && incoming().ticketCode == existing().ticketCode
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNotes', 'updatedAt']);
+      allow delete: if isValidId(requestId) && isAdmin();
+    }
+
+    match /customer_inquiries/{inquiryId} {
+      allow get: if isValidId(inquiryId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(inquiryId)
+        && isValidInquiry(incoming())
+        && incoming().status == 'new'
+        && incoming().createdAt == request.time;
+      allow update: if isValidId(inquiryId)
+        && isValidInquiry(incoming())
+        && isAdmin()
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+      allow delete: if isValidId(inquiryId) && isAdmin();
+    }
+
+    match /chat_logs/{logId} {
+      allow get: if isValidId(logId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(logId) && isValidChatLog(incoming());
+      allow update: if false;
+      allow delete: if isValidId(logId) && isAdmin();
+    }
+
+    // 3. Admin Role Registry
+    match /admins/{uid} {
+      allow get: if isValidId(uid) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(uid) && isValidAdminUser(incoming()) && isAdmin();
+      allow update: if false;
+      allow delete: if isValidId(uid) && isAdmin();
+    }
+  }
+}
